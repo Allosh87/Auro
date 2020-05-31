@@ -1,123 +1,111 @@
 package com.architjn.acjmusicplayer.ui.layouts.fragments;
 
-import android.animation.ArgbEvaluator;
-import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
-import android.view.LayoutInflater;
+import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.BottomSheetDialog;
+import android.support.design.widget.BottomSheetDialogFragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-
+import android.widget.ImageButton;
+import android.content.DialogInterface;
 import com.architjn.acjmusicplayer.R;
-import com.architjn.acjmusicplayer.ui.widget.slidinguppanel.SlidingUpPanelLayout;
+import com.architjn.acjmusicplayer.utils.adapters.PlayingListAdapter;
+import com.architjn.acjmusicplayer.ui.layouts.activity.MainActivity;
+import com.architjn.acjmusicplayer.ui.widget.PointShiftingArrayList;
+import com.architjn.acjmusicplayer.utils.items.Song;
+import java.util.ArrayList;
 
-/**
- * Created by architjn on 06/01/16.
- */
-public class UpNextFragment extends Fragment {
+import com.allosh.xtraplayer.utils.ListSongs;
+import android.support.v7.app.AppCompatActivity;
 
-    private int colorLight;
-    private View mainView;
-    private Context context;
-    private ImageView backButton;
-    private SlidingUpPanelLayout slidingUpPanelLayout;
+import com.allosh.xtraplayer.utils.PermissionChecker;
+import com.allosh.xtraplayer.utils.adapters.CurrentPlaylistQ;
+import android.app.Activity;
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-        mainView = inflater.inflate(R.layout.fragment_now_playing, container, false);
-        context = mainView.getContext();
-        mainView.setBackgroundColor(colorLight);
-        init();
-        changeColorBackToWhite();
-        setFunctioning();
-        return mainView;
+public class UpNextFragment extends BottomSheetDialogFragment {
+
+	private View mView;
+	private Context mContext;
+	private RecyclerView mRecyclerView;
+
+	private PlayingListAdapter mAdapter;
+	private Activity mActivity;
+	private CurrentPlaylistQ adapter;
+
+
+	@SuppressLint("RestrictedApi")
+	@Override
+	public void setupDialog ( Dialog dialog, int style ) {
+		super.setupDialog ( dialog, style );
+		mView = getActivity ( ).getLayoutInflater ( ).inflate ( R.layout.layout_bottomsheet_queue, null, false );
+		mContext = getActivity ( ).getApplicationContext ( );
+
+		setHasOptionsMenu ( true );
+		
+		mRecyclerView = mView.findViewById(R.id.recycler_player);
+		
+     
+		getDialog ( ).setOnShowListener ( new DialogInterface.OnShowListener ( ) {
+
+			@Override
+			public void onShow ( DialogInterface dialog1 ) {
+
+				BottomSheetDialog d = (BottomSheetDialog) dialog1;
+				View bottomSheetInternal = d.findViewById ( android.support.design.R.id.design_bottom_sheet );
+				BottomSheetBehavior.from ( bottomSheetInternal ).setState ( BottomSheetBehavior.STATE_COLLAPSED );
+
+			}
+
+		} );
+
+		setUpRecycler();
+
+		dialog.setContentView ( mView );
+
+		( (View) mView.getParent ( ) ).setBackgroundColor ( getResources ( ).getColor ( android.R.color.transparent ) );
+
+	}
+
+	private void setUpRecycler ( ) {
+		
+		ArrayList<Song> mSongs = ListSongs.getSongList( mContext );
+        adapter = new CurrentPlaylistQ ( mContext, mActivity, mSongs );
+        mRecyclerView.setAdapter ( adapter );
+        mRecyclerView.setLayoutManager ( new LinearLayoutManager ( mContext ) );
+        
+		
+	}
+		
+	
+
+	public void removeFragment ( ) {
+		getActivity ( ).getSupportFragmentManager ( ).beginTransaction ( ).remove ( this ).commit ( );
+	}
+
+	public PlayingListAdapter getAdapter() {
+        return mAdapter;
     }
+	
 
-    private void init() {
-        backButton = (ImageView) mainView.findViewById(R.id.player_back_button);
-    }
+	@Override
+	public void onDestroy ( ) {
+		super.onDestroy ( );
+	}
 
-    private void setFunctioning() {
-        slidingUpPanelLayout.setPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
-            @Override
-            public void onPanelSlide(View panel, float slideOffset) {
-                if (slideOffset == 1 && isVisible())
-                    getActivity().getWindow().setStatusBarColor(0x47000000);
-                else if (isVisible()) {
-                    getBackToLastFragment();
-                }
-            }
+	@Override
+	public void onResume ( ) {
+		// TODO: Implement this method
+		super.onResume ( );
+		setUpRecycler ();
+	}
 
-            @Override
-            public void onPanelCollapsed(View panel) {
+	
 
-            }
 
-            @Override
-            public void onPanelExpanded(View panel) {
-
-            }
-
-            @Override
-            public void onPanelAnchored(View panel) {
-
-            }
-
-            @Override
-            public void onPanelHidden(View panel) {
-
-            }
-        });
-        backButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getBackToLastFragment();
-            }
-        });
-    }
-
-    private void getBackToLastFragment() {
-        PlayerFragment fragment = new PlayerFragment();
-        fragment.setSlidingUpPanelLayout(slidingUpPanelLayout);
-        fragment.setUpNextFragment(this);
-        getActivity().getSupportFragmentManager()
-                .beginTransaction().setCustomAnimations(android.R.anim.fade_in,
-                android.R.anim.fade_out)
-                .replace(R.id.panel_holder, fragment)
-                .commit();
-        fragment.setMiniPlayerAlpha(0);
-        slidingUpPanelLayout.setPanelSlideListener(null);
-    }
-
-    private void changeColorBackToWhite() {
-        ValueAnimator animator = ValueAnimator.ofObject(new ArgbEvaluator(), colorLight,
-                ContextCompat.getColor(context, R.color.appBackground));
-        animator.setDuration(500);
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                mainView.setBackgroundColor((Integer) valueAnimator.getAnimatedValue());
-            }
-        });
-        animator.start();
-    }
-
-    public void onBackPressed() {
-        if (isVisible())
-            getBackToLastFragment();
-    }
-
-    public void setColorLight(int colorLight) {
-        this.colorLight = colorLight;
-    }
-
-    public void setSlidingUpPanelLayout(SlidingUpPanelLayout slidingUpPanelLayout) {
-        this.slidingUpPanelLayout = slidingUpPanelLayout;
-    }
 }
