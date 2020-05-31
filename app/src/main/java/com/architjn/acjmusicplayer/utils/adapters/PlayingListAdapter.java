@@ -17,188 +17,87 @@ import com.architjn.acjmusicplayer.ui.widget.PointShiftingArrayList;
 import com.architjn.acjmusicplayer.utils.ListSongs;
 import com.architjn.acjmusicplayer.utils.Utils;
 import com.architjn.acjmusicplayer.utils.items.Song;
-import com.squareup.picasso.Picasso;
+
 
 import java.io.File;
 
 /**
  * Created by architjn on 28/11/15.
  */
-public class PlayingListAdapter extends RecyclerView.Adapter<PlayingListAdapter.SimpleItemViewHolder> {
+public class PlayingListAdapter extends RecyclerView.Adapter<PlayingListAdapter.MyViewHolder> {
 
-    private static final int ITEM_VIEW_TYPE_HEADER = 0;
-    private static final int ITEM_VIEW_TYPE_ITEM = 1;
-    private static final int ITEM_VIEW_TYPE_UP_NEXT_HEADER = 2;
-
-    private PointShiftingArrayList<Song> items;
     private Context context;
-    private View header;
-    private int lightColor;
-    private int darkColor;
+    private Activity mActivity;
+    private LayoutInflater inflater;
+	
+	private ArrayList<Song> mSongs;
+	
 
-    public PlayingListAdapter(Context context, View header, PointShiftingArrayList<Song> items) {
+    public PlayingListAdapter (Context context, Activity mActivity, ArrayList<Song> data ){
         this.context = context;
-        this.header = header;
-        this.items = items;
-    }
-
-    public boolean isHeader(int position) {
-        return position == 0;
-    }
-
-    public boolean isUpNextHeader(int position) {
-        return position == 2;
+        this.mActivity = mActivity;
+		this.mSongs = data;
+        inflater = LayoutInflater.from(context);
     }
 
     @Override
-    public PlayingListAdapter.SimpleItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if (viewType == ITEM_VIEW_TYPE_HEADER) {
-            return new SimpleItemViewHolder(header);
-        } else if (viewType == ITEM_VIEW_TYPE_UP_NEXT_HEADER) {
-            return new SimpleItemViewHolder(LayoutInflater.from(parent.getContext()).
-                    inflate(R.layout.up_next_header, parent, false));
-        }
-        View itemView = LayoutInflater.from(parent.getContext()).
-                inflate(R.layout.songs_list_item, parent, false);
-        return new SimpleItemViewHolder(itemView);
+    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view = inflater.inflate(R.layout.songs_list_item, parent, false);
+        return new MyViewHolder(view);
+    }
+    public void onBindViewHolder(MyViewHolder holder, final int position) {
+		
+		Song song = mSongs.get(position);
+		holder.name.setText(song.getName());
+        holder.artistName.setText(mSongs.get(position).getArtist());
+        holder.mainView.setElevation(0);
+
+        //setAlbumArt ( holder, song ) ;
+		
     }
 
-    public void setCurrentColor(int lightColor, int darkColor) {
-        this.lightColor = lightColor;
-        this.darkColor = darkColor;
-    }
+	private void setAlbumArt ( CurrentPlaylistQ.MyViewHolder holder, Song song ) {
+		Uri albumArt = ListSongs.getAlbumArtUri ( song.getAlbumId() ) ;
 
-    @Override
-    public void onBindViewHolder(final PlayingListAdapter.SimpleItemViewHolder holder, final int position) {
-        if (isHeader(position)) {
-            holder.seekHolder.setBackgroundColor(darkColor);
-            holder.controlHolder.setBackgroundColor(lightColor);
-            return;
-        } else if (isUpNextHeader(position)) {
-            return;
-        }
-        holder.name.setText(items.get(getPosition(position)).getName());
-        holder.artistName.setText(items.get(getPosition(position)).getArtist());
-        holder.img.setPadding(0, 0, 0, 0);
-        //Load Image in Background
-        Utils utils = new Utils(context);
-        if (getPosition(position) == 0) {
-            int padding = utils.dpToPx(10);
-            holder.img.setPadding(padding, padding, padding, padding);
-            Picasso.with(context).load(R.drawable.ic_speaker_48dp).into(holder.img);
-        } else {
-            String path = ListSongs.getAlbumArt(context,
-                    items.get(getPosition(position)).getAlbumId());
-            int size = utils.dpToPx(50);
-            if (path != null)
-                Picasso.with(context).load(new File(path)).resize(size,
-                        size).centerCrop().into(holder.img);
-            else {
-                holder.img.setImageBitmap(utils.getBitmapOfVector(R.drawable.default_art,
-                        size, size));
-            }
-        }
-        setOnClick(holder, getPosition(position));
-    }
+		if ( albumArt != null ) {
 
-    private void setOnClick(SimpleItemViewHolder holder, final int position) {
-        holder.mainView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (position == 0) {
-                    new Thread(new Runnable() {
-                        public void run() {
-                            Intent i = new Intent(PlayerService.ACTION_SEEK_SONG);
-                            i.putExtra("seek", 0);
-                            context.sendBroadcast(i);
-//                            ((PlayerActivity) context).seekBar.setProgress(0);
-                        }
-                    }).start();
-                    return;
-                }
-                new Thread(new Runnable() {
-                    public void run() {
-                        Intent i = new Intent();
-                        i.setAction(PlayerService.ACTION_CHANGE_SONG);
-                        i.putExtra("pos", items.getNormalIndex(position));
-                        context.sendBroadcast(i);
-                    }
-                }).start();
-            }
-        });
-        holder.menu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                PopupMenu pm = new PopupMenu(context, view);
-                pm.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        switch (item.getItemId()) {
-                            case R.id.popup_song_play:
-                                new Thread(new Runnable() {
-                                    public void run() {
-                                        Intent i = new Intent(PlayerService.ACTION_PLAY_SINGLE);
-                                        i.putExtra("songId", items.get(position).getSongId());
-                                        context.sendBroadcast(i);
-                                    }
-                                }).start();
-                                break;
-                            case R.id.popup_song_addtoplaylist:
-                                break;
-                        }
-                        return false;
-                    }
-                });
-                pm.inflate(R.menu.popup_song);
-                pm.show();
-            }
-        });
-    }
+			holder.img.setImageURI ( albumArt );
 
-    private int getPosition(int position) {
-        if (position > 2)
-            return position - 2;
-        return position - 1;
-    }
+		} else {
+			
+			//holder.img.setImageResource ( R.drawable.default_art );
+			
+		}
+		
+	}
 
-    @Override
+    
     public int getItemCount() {
-        return items.size() + 2;
+		
+        return mSongs.size();
+		
     }
 
-    public void setPointOnShifted(int pointOnShifted) {
-        items.setPointOnShifted(pointOnShifted);
-        notifyDataSetChanged();
-    }
+    public class MyViewHolder extends RecyclerView.ViewHolder {
 
-    @Override
-    public int getItemViewType(int position) {
-        if (isHeader(position))
-            return ITEM_VIEW_TYPE_HEADER;
-        else if (isUpNextHeader(position))
-            return ITEM_VIEW_TYPE_UP_NEXT_HEADER;
-        else
-            return ITEM_VIEW_TYPE_ITEM;
-    }
-
-    public class SimpleItemViewHolder extends RecyclerView.ViewHolder {
-
-        public TextView name, artistName;
+		public TextView name, artistName;
         public View mainView, menu;
         public ImageView img;
 
-        public View seekHolder, controlHolder;
-
-        public SimpleItemViewHolder(View itemView) {
+        public MyViewHolder(View itemView) {
             super(itemView);
             mainView = itemView;
-            img = (ImageView) itemView.findViewById(R.id.song_item_img);
+            img = itemView.findViewById(R.id.song_item_img);
             name = (TextView) itemView.findViewById(R.id.song_item_name);
             menu = itemView.findViewById(R.id.song_item_menu);
             artistName = (TextView) itemView.findViewById(R.id.song_item_artist);
+        
 
-            seekHolder = itemView.findViewById(R.id.control_seek_bar_holder);
-            controlHolder = itemView.findViewById(R.id.controller_holder);
+
         }
+
+        
     }
+	
+	
 }
