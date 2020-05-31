@@ -21,11 +21,10 @@ import com.architjn.acjmusicplayer.ui.widget.PointShiftingArrayList;
 import com.architjn.acjmusicplayer.utils.items.Song;
 import java.util.ArrayList;
 
-import com.allosh.xtraplayer.utils.ListSongs;
+import com.architjn.acjmusicplayer.utils.ListSongs;
 import android.support.v7.app.AppCompatActivity;
 
-import com.allosh.xtraplayer.utils.PermissionChecker;
-import com.allosh.xtraplayer.utils.adapters.CurrentPlaylistQ;
+import com.architjn.acjmusicplayer.utils.PermissionChecker;
 import android.app.Activity;
 
 public class UpNextFragment extends BottomSheetDialogFragment {
@@ -36,7 +35,7 @@ public class UpNextFragment extends BottomSheetDialogFragment {
 
 	private PlayingListAdapter mAdapter;
 	private Activity mActivity;
-	private CurrentPlaylistQ adapter;
+	
 
 
 	@SuppressLint("RestrictedApi")
@@ -75,8 +74,8 @@ public class UpNextFragment extends BottomSheetDialogFragment {
 	private void setUpRecycler ( ) {
 		
 		ArrayList<Song> mSongs = ListSongs.getSongList( mContext );
-        adapter = new CurrentPlaylistQ ( mContext, mActivity, mSongs );
-        mRecyclerView.setAdapter ( adapter );
+        mAdapter = new PlayingListAdapter ( mContext, mActivity, mSongs );
+        mRecyclerView.setAdapter ( mAdapter );
         mRecyclerView.setLayoutManager ( new LinearLayoutManager ( mContext ) );
         
 		
