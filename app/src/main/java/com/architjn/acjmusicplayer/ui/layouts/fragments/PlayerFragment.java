@@ -242,48 +242,22 @@ public class PlayerFragment extends Fragment {
                 volumeSeekBar.setProgress(MAX_VOL);
             }
         });
-        playlist.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                int[] loc = new int[2];
-                revealView.setBackgroundColor(colorLight);
-                playlist.getLocationOnScreen(loc);
-                DrawableCompat.setTint(backButton.getDrawable(), 0xff444d5d);
-                DrawableCompat.setTint(overflowMenu.getDrawable(), 0xff444d5d);
-                Animator anim = ViewAnimationUtils
-                        .createCircularReveal(revealView, loc[0], loc[1], 0,
-                                (new Utils(context).getWindowWidth()) * 2);
-                anim.setDuration(800);
-                anim.setInterpolator(new FastOutSlowInInterpolator());
-                revealView.setVisibility(View.VISIBLE);
-                anim.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
 
-                    }
+        playlist.setOnClickListener ( new View.OnClickListener ( ) {
 
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        upNextFragment.setColorLight(colorLight);
-                        upNextFragment.setSlidingUpPanelLayout(slidingUpPanelLayout);
-                        getActivity().getSupportFragmentManager()
-                                .beginTransaction().replace(R.id.panel_holder, upNextFragment)
-                                .commit();
-                    }
+			private UpNextFragment mCurrentPlaylist;
 
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
+			@Override
+			public void onClick ( View v ) {
 
-                    }
+				mCurrentPlaylist = new UpNextFragment ( );
+				mCurrentPlaylist.show (getActivity().getSupportFragmentManager ( ), "BOTTOM_SHEET" );
 
-                    @Override
-                    public void onAnimationRepeat(Animator animator) {
+		}
 
-                    }
-                });
-                anim.start();
-            }
-        });
+
+	} );
+
         volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar arg0) {
